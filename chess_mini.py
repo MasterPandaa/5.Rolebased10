@@ -1,6 +1,7 @@
 import sys
+from typing import List, Optional, Tuple
+
 import pygame
-from typing import List, Tuple, Optional
 
 # =========================
 # Model: Papan dan Aturan
@@ -12,24 +13,41 @@ from typing import List, Tuple, Optional
 # Koordinat papan: (row, col) dengan row=0 di atas, col=0 di kiri.
 
 PIECE_UNICODE = {
-    'wK': '♔', 'wQ': '♕', 'wR': '♖', 'wB': '♗', 'wN': '♘', 'wP': '♙',
-    'bK': '♚', 'bQ': '♛', 'bR': '♜', 'bB': '♝', 'bN': '♞', 'bP': '♟',
+    "wK": "♔",
+    "wQ": "♕",
+    "wR": "♖",
+    "wB": "♗",
+    "wN": "♘",
+    "wP": "♙",
+    "bK": "♚",
+    "bQ": "♛",
+    "bR": "♜",
+    "bB": "♝",
+    "bN": "♞",
+    "bP": "♟",
 }
 
 PIECE_VALUE = {
-    'P': 1,
-    'N': 3,
-    'B': 3,
-    'R': 5,
-    'Q': 9,
-    'K': 0,  # Untuk evaluasi material sederhana, raja tidak diberi nilai
+    "P": 1,
+    "N": 3,
+    "B": 3,
+    "R": 5,
+    "Q": 9,
+    "K": 0,  # Untuk evaluasi material sederhana, raja tidak diberi nilai
 }
 
-WHITE, BLACK = 'w', 'b'
+WHITE, BLACK = "w", "b"
+
 
 class Move:
-    def __init__(self, src: Tuple[int, int], dst: Tuple[int, int], piece: str,
-                 captured: Optional[str] = None, promotion: Optional[str] = None):
+    def __init__(
+        self,
+        src: Tuple[int, int],
+        dst: Tuple[int, int],
+        piece: str,
+        captured: Optional[str] = None,
+        promotion: Optional[str] = None,
+    ):
         self.src = src
         self.dst = dst
         self.piece = piece
@@ -43,23 +61,25 @@ class Move:
 class Board:
     def __init__(self):
         # 8x8 dengan None atau 'wP' dst.
-        self.grid: List[List[Optional[str]]] = [[None for _ in range(8)] for _ in range(8)]
+        self.grid: List[List[Optional[str]]] = [
+            [None for _ in range(8)] for _ in range(8)
+        ]
         self.turn: str = WHITE
         self.setup_start_position()
 
     def setup_start_position(self):
         # Bidak hitam (baris atas)
-        self.grid[0] = ['bR', 'bN', 'bB', 'bQ', 'bK', 'bB', 'bN', 'bR']
-        self.grid[1] = ['bP'] * 8
+        self.grid[0] = ["bR", "bN", "bB", "bQ", "bK", "bB", "bN", "bR"]
+        self.grid[1] = ["bP"] * 8
         # Baris tengah
         for r in range(2, 6):
             self.grid[r] = [None] * 8
         # Bidak putih (baris bawah)
-        self.grid[6] = ['wP'] * 8
-        self.grid[7] = ['wR', 'wN', 'wB', 'wQ', 'wK', 'wB', 'wN', 'wR']
+        self.grid[6] = ["wP"] * 8
+        self.grid[7] = ["wR", "wN", "wB", "wQ", "wK", "wB", "wN", "wR"]
         self.turn = WHITE
 
-    def copy(self) -> 'Board':
+    def copy(self) -> "Board":
         b = Board.__new__(Board)
         b.grid = [[self.grid[r][c] for c in range(8)] for r in range(8)]
         b.turn = self.turn
@@ -76,7 +96,7 @@ class Board:
         r, c = pos
         self.grid[r][c] = piece
 
-    def apply_move(self, mv: Move) -> 'Board':
+    def apply_move(self, mv: Move) -> "Board":
         newb = self.copy()
         sr, sc = mv.src
         dr, dc = mv.dst
@@ -106,7 +126,7 @@ class Board:
         for r in range(8):
             for c in range(8):
                 p = self.grid[r][c]
-                if p == color + 'K':
+                if p == color + "K":
                     return (r, c)
         return None
 
@@ -116,22 +136,49 @@ class Rules:
     def generate_pseudo_legal_moves(board: Board, color: str) -> List[Move]:
         # Menghasilkan langkah tanpa menyaring kondisi "raja tidak boleh tersisa dalam cek".
         moves: List[Move] = []
-        for (r, c) in board.all_pieces_of(color):
+        for r, c in board.all_pieces_of(color):
             piece = board.piece_at((r, c))
             if not piece:
                 continue
             kind = piece[1]
-            if kind == 'P':
+            if kind == "P":
                 Rules._pawn_moves(board, (r, c), color, moves)
-            elif kind == 'N':
+            elif kind == "N":
                 Rules._knight_moves(board, (r, c), color, moves)
-            elif kind == 'B':
-                Rules._slider_moves(board, (r, c), color, moves, directions=[(-1,-1), (-1,1), (1,-1), (1,1)])
-            elif kind == 'R':
-                Rules._slider_moves(board, (r, c), color, moves, directions=[(-1,0), (1,0), (0,-1), (0,1)])
-            elif kind == 'Q':
-                Rules._slider_moves(board, (r, c), color, moves, directions=[(-1,-1), (-1,1), (1,-1), (1,1), (-1,0), (1,0), (0,-1), (0,1)])
-            elif kind == 'K':
+            elif kind == "B":
+                Rules._slider_moves(
+                    board,
+                    (r, c),
+                    color,
+                    moves,
+                    directions=[(-1, -1), (-1, 1), (1, -1), (1, 1)],
+                )
+            elif kind == "R":
+                Rules._slider_moves(
+                    board,
+                    (r, c),
+                    color,
+                    moves,
+                    directions=[(-1, 0), (1, 0), (0, -1), (0, 1)],
+                )
+            elif kind == "Q":
+                Rules._slider_moves(
+                    board,
+                    (r, c),
+                    color,
+                    moves,
+                    directions=[
+                        (-1, -1),
+                        (-1, 1),
+                        (1, -1),
+                        (1, 1),
+                        (-1, 0),
+                        (1, 0),
+                        (0, -1),
+                        (0, 1),
+                    ],
+                )
+            elif kind == "K":
                 Rules._king_moves(board, (r, c), color, moves)
         return moves
 
@@ -168,13 +215,13 @@ class Rules:
         if board.in_bounds(nr, c) and board.piece_at((nr, c)) is None:
             # Promosi?
             promo_row = 0 if color == WHITE else 7
-            promotion = 'Q' if nr == promo_row else None
-            out.append(Move((r, c), (nr, c), color+'P', None, promotion))
+            promotion = "Q" if nr == promo_row else None
+            out.append(Move((r, c), (nr, c), color + "P", None, promotion))
             # Maju 2 dari start
             if r == start_row:
-                nr2 = r + 2*dir
+                nr2 = r + 2 * dir
                 if board.in_bounds(nr2, c) and board.piece_at((nr2, c)) is None:
-                    out.append(Move((r, c), (nr2, c), color+'P'))
+                    out.append(Move((r, c), (nr2, c), color + "P"))
         # Makan diagonal
         for dc in (-1, 1):
             nc = c + dc
@@ -183,23 +230,37 @@ class Rules:
                 target = board.piece_at((nr, nc))
                 if target and target[0] != color:
                     promo_row = 0 if color == WHITE else 7
-                    promotion = 'Q' if nr == promo_row else None
-                    out.append(Move((r, c), (nr, nc), color+'P', captured=target, promotion=promotion))
+                    promotion = "Q" if nr == promo_row else None
+                    out.append(
+                        Move(
+                            (r, c),
+                            (nr, nc),
+                            color + "P",
+                            captured=target,
+                            promotion=promotion,
+                        )
+                    )
 
     @staticmethod
     def _knight_moves(board: Board, pos: Tuple[int, int], color: str, out: List[Move]):
         r, c = pos
-        jumps = [(-2,-1), (-2,1), (-1,-2), (-1,2), (1,-2), (1,2), (2,-1), (2,1)]
+        jumps = [(-2, -1), (-2, 1), (-1, -2), (-1, 2), (1, -2), (1, 2), (2, -1), (2, 1)]
         for dr, dc in jumps:
             nr, nc = r + dr, c + dc
             if not board.in_bounds(nr, nc):
                 continue
             target = board.piece_at((nr, nc))
             if target is None or target[0] != color:
-                out.append(Move((r, c), (nr, nc), color+'N', captured=target))
+                out.append(Move((r, c), (nr, nc), color + "N", captured=target))
 
     @staticmethod
-    def _slider_moves(board: Board, pos: Tuple[int, int], color: str, out: List[Move], directions: List[Tuple[int,int]]):
+    def _slider_moves(
+        board: Board,
+        pos: Tuple[int, int],
+        color: str,
+        out: List[Move],
+        directions: List[Tuple[int, int]],
+    ):
         r, c = pos
         piece = board.piece_at(pos)
         for dr, dc in directions:
@@ -235,6 +296,7 @@ class Rules:
 # AI Sederhana
 # =========================
 
+
 def evaluate_material(board: Board) -> int:
     # Nilai positif menguntungkan Putih, negatif menguntungkan Hitam
     score = 0
@@ -247,7 +309,7 @@ def evaluate_material(board: Board) -> int:
     return score
 
 
-def is_square_attacked(board: Board, square: Tuple[int,int], by_color: str) -> bool:
+def is_square_attacked(board: Board, square: Tuple[int, int], by_color: str) -> bool:
     # Gunakan pseudo-legal moves pihak by_color, apakah ada yang mendarat di square
     for mv in Rules.generate_pseudo_legal_moves(board, by_color):
         if mv.dst == square:
@@ -316,14 +378,14 @@ STATUS_BG = (30, 30, 30)
 STATUS_FG = (230, 230, 230)
 
 
-def to_screen(rc: Tuple[int,int]) -> Tuple[int,int]:
+def to_screen(rc: Tuple[int, int]) -> Tuple[int, int]:
     r, c = rc
     x = MARGIN + c * TILE_SIZE
     y = MARGIN + r * TILE_SIZE
     return x, y
 
 
-def from_screen(xy: Tuple[int,int]) -> Optional[Tuple[int,int]]:
+def from_screen(xy: Tuple[int, int]) -> Optional[Tuple[int, int]]:
     x, y = xy
     if x < MARGIN or y < MARGIN or x >= MARGIN + BOARD_SIZE or y >= MARGIN + BOARD_SIZE:
         return None
@@ -332,24 +394,38 @@ def from_screen(xy: Tuple[int,int]) -> Optional[Tuple[int,int]]:
     return (row, col)
 
 
-def draw_board(screen, board: Board, font, selected: Optional[Tuple[int,int]], legal_moves_for_selected: List[Move], status_text: str):
+def draw_board(
+    screen,
+    board: Board,
+    font,
+    selected: Optional[Tuple[int, int]],
+    legal_moves_for_selected: List[Move],
+    status_text: str,
+):
     # Latar papan
     for r in range(8):
         for c in range(8):
             color = LIGHT_COLOR if (r + c) % 2 == 0 else DARK_COLOR
-            rect = pygame.Rect(MARGIN + c*TILE_SIZE, MARGIN + r*TILE_SIZE, TILE_SIZE, TILE_SIZE)
+            rect = pygame.Rect(
+                MARGIN + c * TILE_SIZE, MARGIN + r * TILE_SIZE, TILE_SIZE, TILE_SIZE
+            )
             pygame.draw.rect(screen, color, rect)
 
     # Sorot petak terpilih
     if selected:
         x, y = to_screen(selected)
-        pygame.draw.rect(screen, HIGHLIGHT_COLOR, pygame.Rect(x, y, TILE_SIZE, TILE_SIZE), border_radius=6)
+        pygame.draw.rect(
+            screen,
+            HIGHLIGHT_COLOR,
+            pygame.Rect(x, y, TILE_SIZE, TILE_SIZE),
+            border_radius=6,
+        )
 
     # Hint langkah dari petak terpilih
     if legal_moves_for_selected:
         for mv in legal_moves_for_selected:
             x, y = to_screen(mv.dst)
-            center = (x + TILE_SIZE//2, y + TILE_SIZE//2)
+            center = (x + TILE_SIZE // 2, y + TILE_SIZE // 2)
             pygame.draw.circle(screen, MOVE_HINT_COLOR, center, 10)
 
     # Gambar bidak
@@ -367,10 +443,16 @@ def draw_board(screen, board: Board, font, selected: Optional[Tuple[int,int]], l
             screen.blit(surf, (ux, uy))
 
     # Panel status
-    pygame.draw.rect(screen, STATUS_BG, pygame.Rect(0, BOARD_SIZE + 2*MARGIN, WINDOW_W, WINDOW_H - (BOARD_SIZE + 2*MARGIN)))
+    pygame.draw.rect(
+        screen,
+        STATUS_BG,
+        pygame.Rect(
+            0, BOARD_SIZE + 2 * MARGIN, WINDOW_W, WINDOW_H - (BOARD_SIZE + 2 * MARGIN)
+        ),
+    )
     status_font = pygame.font.SysFont(None, 26, bold=True)
     txt = status_font.render(status_text, True, STATUS_FG)
-    screen.blit(txt, (MARGIN, BOARD_SIZE + 2*MARGIN + 15))
+    screen.blit(txt, (MARGIN, BOARD_SIZE + 2 * MARGIN + 15))
 
 
 def format_game_status(board: Board) -> str:
@@ -396,7 +478,7 @@ def main():
 
     board = Board()
 
-    selected: Optional[Tuple[int,int]] = None
+    selected: Optional[Tuple[int, int]] = None
     legal_cache_for_selected: List[Move] = []
 
     running = True
@@ -413,7 +495,11 @@ def main():
         for event in pygame.event.get():
             if event.type == pygame.QUIT:
                 running = False
-            elif event.type == pygame.MOUSEBUTTONDOWN and event.button == 1 and not game_over:
+            elif (
+                event.type == pygame.MOUSEBUTTONDOWN
+                and event.button == 1
+                and not game_over
+            ):
                 # Input hanya saat giliran manusia
                 if board.turn == human_color:
                     pos = from_screen(event.pos)
@@ -423,10 +509,18 @@ def main():
                             # pilih jika ada bidak sendiri
                             if piece and piece[0] == human_color:
                                 selected = pos
-                                legal_cache_for_selected = [m for m in Rules.generate_legal_moves(board, human_color) if m.src == selected]
+                                legal_cache_for_selected = [
+                                    m
+                                    for m in Rules.generate_legal_moves(
+                                        board, human_color
+                                    )
+                                    if m.src == selected
+                                ]
                         else:
                             # Coba gerakkan ke pos
-                            moves = [m for m in legal_cache_for_selected if m.dst == pos]
+                            moves = [
+                                m for m in legal_cache_for_selected if m.dst == pos
+                            ]
                             if moves:
                                 board = board.apply_move(moves[0])
                                 selected = None
@@ -435,7 +529,13 @@ def main():
                                 # ganti seleksi bila klik bidak sendiri
                                 if piece and piece[0] == human_color:
                                     selected = pos
-                                    legal_cache_for_selected = [m for m in Rules.generate_legal_moves(board, human_color) if m.src == selected]
+                                    legal_cache_for_selected = [
+                                        m
+                                        for m in Rules.generate_legal_moves(
+                                            board, human_color
+                                        )
+                                        if m.src == selected
+                                    ]
                                 else:
                                     # batal seleksi
                                     selected = None
@@ -470,7 +570,7 @@ def main():
         ]
         for i, line in enumerate(tips):
             label = ui_font.render(line, True, (210, 210, 210))
-            screen.blit(label, (MARGIN, BOARD_SIZE + 2*MARGIN + 40 + i*20))
+            screen.blit(label, (MARGIN, BOARD_SIZE + 2 * MARGIN + 40 + i * 20))
 
         pygame.display.flip()
 
